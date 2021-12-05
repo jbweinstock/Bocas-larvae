@@ -64,4 +64,4 @@ data$copepod_counter[42] = "Tania"
 data$copepod_counter[29] = "Alisson"
 
 # Write combo dataframe (only run once)
-write.csv(data,"data/combined_counts.csv")
+write.csv(data,"data/combined_counts.csv",row.names = F)
