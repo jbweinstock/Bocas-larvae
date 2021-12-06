@@ -1,0 +1,216 @@
+---
+title: "mvabund model selection"
+author: "JBW"
+date: "12/5/2021"
+output: pdf_document
+---
+
+First, load the libraries
+```{r}
+library(zoo) # as.Date
+library(mvabund) #manyglm, etc
+library(vegan) #rda
+library(ggplot2)
+library(ggfortify)
+library(ggpubr) #ggarrange
+library(gridExtra) ##grid.arrange
+library(grid) #textGrob
+library(reshape2)
+```
+
+Then, load the data
+```{r}
+# Load data
+data = read.csv("data/combined_counts.csv")
+data$Date = as.Date(data$Date,"%m/%d/%y")
+
+# Pull out only the columns of plankton counts
+plankton_counts = data[,8:18]; plankton_counts$copepods = data$copepods
+
+# Make smaller data set omitting 3 rarest groups (fish, crabs, shrimp)
+plankton_common = cbind(plankton_counts[,2:6],plankton_counts[,9:12])
+
+# Create mvabund object for common plankton groups
+plankton_mv = mvabund(plankton_common)
+```
+
+To avoid redundant predictor terms, run quick PCA on physical data
+```{r}
+data_waterqual = as.data.frame(cbind(data$DO,data$temp_C,data$turbidity,
+                                     data$salinity,data$chlorophyll,data$DOM,data$BGA))
+colnames(data_waterqual) = c("DO","temp","turbidity","sal","chlor","DOM","BGA")
+water.pca = rda(na.omit(data_waterqual), scale=T) #all are in same units, no need to scale
+#summary(water.pca)
+screeplot(water.pca,type="l")
+biplot(water.pca,type="text")
+```
+Turbidity, chlorophyll, and blue-green algae all (understandably) co-vary. So, we will only include 1 of the three in our model. We will stick with chlorophyll, since it is commonly measured in other studies.
+
+Now, model comparison is best if run on the same dataset (AKA NA values have to be dealt with). So, we will run linear interpolation to fill in the 16 instances of NA's in chlorophyll and DOM.
+```{r}
+#create new object and use linear interpolation to fill NAs
+data_nona = data
+data_nona$chlorophyll = na.approx(data_nona$chlorophyll,method="linear",na.rm=F)
+data_nona$DOM = na.approx(data_nona$DOM,method="linear",na.rm=F)
+```
+
+Now for model selection... 
+First, run the full model (omitting pH due to QC concerns), allowing for all possible 2-way interactions between factors, and all possible 2-way interactions between continuous variables
+```{r}
+glm1 = manyglm(plankton_mv ~ data_nona$Site * 
+                 as.factor(data_nona$Depth_ctgry) + 
+                 data_nona$DO + 
+                 data_nona$temp_C + 
+                 data_nona$salinity +
+                 data_nona$chlorophyll +
+                 data_nona$DOM + 
+                 data_nona$DO:data_nona$temp_C + 
+                 data_nona$DO:data_nona$salinity + 
+                 data_nona$DO:data_nona$chlorophyll + 
+                 data_nona$DO:data_nona$DOM + 
+                 data_nona$temp_C:data_nona$salinity + 
+                 data_nona$temp_C:data_nona$chlorophyll + 
+                 data_nona$temp_C:data_nona$DOM + 
+                 data_nona$salinity:data_nona$chlorophyll + 
+                 data_nona$salinity:data_nona$DOM + 
+                 data_nona$chlorophyll:data_nona$DOM,
+               family="negative_binomial", #better for counts
+               nBoot = 1000, #default
+               k=1, #default
+               theta.method = "PHI") #default
+#for some reason, the above model would not run until I stopped allowing interactions between the factor variables (site, depth category) and the numeric ones...
+
+plot(glm1) #check residuals
+glm1 #get summary info
+```
+
+Then use drop1 function to test models with fewer terms
+```{r}
+drop_tests = drop1(glm1,test="Chisq",trace=T) #likelihood ratio test recommended for GLMs
+drop_tests
+```
+This suggests dropping the interaction between chlorophyll and DOM...
+
+So run the model again, dropping the term that yielded the lowest AIC
+```{r}
+glm2 = manyglm(plankton_mv ~ data_nona$Site * 
+                 as.factor(data_nona$Depth_ctgry) + 
+                 data_nona$DO + 
+                 data_nona$temp_C + 
+                 data_nona$salinity +
+                 data_nona$chlorophyll +
+                 data_nona$DOM + 
+                 data_nona$DO:data_nona$temp_C + 
+                 data_nona$DO:data_nona$salinity + 
+                 data_nona$DO:data_nona$chlorophyll + 
+                 data_nona$DO:data_nona$DOM + 
+                 data_nona$temp_C:data_nona$salinity + 
+                 data_nona$temp_C:data_nona$chlorophyll + 
+                 data_nona$temp_C:data_nona$DOM + 
+                 data_nona$salinity:data_nona$chlorophyll + 
+                 data_nona$salinity:data_nona$DOM,
+               family="negative_binomial", #better for counts
+               nBoot = 1000, #default
+               k=1, #default
+               theta.method = "PHI") #default
+
+plot(glm2) #check residuals
+drop_test_2 = drop1(glm2,test="Chisq",trace=T) #likelihood ratio test recommended for GLMs
+drop_test_2
+```
+Since we still have a lot of terms, we will go ahead and toss out the interaction term with the next lowest AIC: the interaction between DO and salinity.
+
+```{r}
+glm3 = manyglm(plankton_mv ~ data_nona$Site * 
+                 as.factor(data_nona$Depth_ctgry) + 
+                 data_nona$DO + 
+                 data_nona$temp_C + 
+                 data_nona$salinity +
+                 data_nona$chlorophyll +
+                 data_nona$DOM + 
+                 data_nona$DO:data_nona$temp_C + 
+                 data_nona$DO:data_nona$chlorophyll + 
+                 data_nona$DO:data_nona$DOM + 
+                 data_nona$temp_C:data_nona$salinity + 
+                 data_nona$temp_C:data_nona$chlorophyll + 
+                 data_nona$temp_C:data_nona$DOM + 
+                 data_nona$salinity:data_nona$chlorophyll + 
+                 data_nona$salinity:data_nona$DOM,
+               family="negative_binomial", #better for counts
+               nBoot = 1000, #default
+               k=1, #default
+               theta.method = "PHI") #default
+
+plot(glm3) #check residuals
+drop_test_3 = drop1(glm3,test="Chisq",trace=T) #likelihood ratio test recommended for GLMs
+drop_test_3
+```
+Again. since we still have a lot of terms, we will go ahead and toss out the interaction term with the next lowest AIC: the interaction between salinity and chlorophyll.
+
+```{r}
+glm4 = manyglm(plankton_mv ~ data_nona$Site * 
+                 as.factor(data_nona$Depth_ctgry) + 
+                 data_nona$DO + 
+                 data_nona$temp_C + 
+                 data_nona$salinity +
+                 data_nona$chlorophyll +
+                 data_nona$DOM + 
+                 data_nona$DO:data_nona$temp_C + 
+                 data_nona$DO:data_nona$chlorophyll + 
+                 data_nona$DO:data_nona$DOM + 
+                 data_nona$temp_C:data_nona$salinity + 
+                 data_nona$temp_C:data_nona$chlorophyll + 
+                 data_nona$temp_C:data_nona$DOM + 
+                 data_nona$salinity:data_nona$DOM,
+               family="negative_binomial", #better for counts
+               nBoot = 1000, #default
+               k=1, #default
+               theta.method = "PHI") #default
+
+plot(glm4) #check residuals
+drop_test_4 = drop1(glm4,test="Chisq",trace=T) #likelihood ratio test recommended for GLMs
+drop_test_4
+```
+At this point, no single (dropped) term can make the model significantly better. However, we will keep dropping the lowest AIC value just to see if we get to another point when the model improves again.
+
+```{r}
+glm5 = manyglm(plankton_mv ~ data_nona$Site * 
+                 as.factor(data_nona$Depth_ctgry) + 
+                 data_nona$DO + 
+                 data_nona$temp_C + 
+                 data_nona$salinity +
+                 data_nona$chlorophyll +
+                 data_nona$DOM + 
+                 data_nona$DO:data_nona$temp_C + 
+                 data_nona$DO:data_nona$chlorophyll + 
+                 data_nona$DO:data_nona$DOM + 
+                 data_nona$temp_C:data_nona$salinity + 
+                 data_nona$temp_C:data_nona$DOM + 
+                 data_nona$salinity:data_nona$DOM,
+               family="negative_binomial", #better for counts
+               nBoot = 1000, #default
+               k=1, #default
+               theta.method = "PHI") #default
+
+plot(glm5) #check residuals
+drop_test_5 = drop1(glm5,test="Chisq",trace=T) #likelihood ratio test recommended for GLMs
+drop_test_5
+```
+...It only got worse... So we will stick with glm4, which kept the term dropped in glm5.
+
+So next, we get the univariate tests...
+########
+```{r}
+model1 = anova.manyglm(glm4,p.uni = "adjusted") #took 26 min
+model1 #get p-values
+#saveRDS(model1,"results/GLM_model_12.5.21.rds")
+```
+In the full output, we see that the interaction between temperature and chlorophyll is not significant in either the multivariate test or in any univariate tests. Therefore, we will try the same test for glm5 (when we dropped that term and the AIC stayed the same).
+
+```{r}
+#model2 = anova.manyglm(glm5,p.uni = "adjusted") #took 22 min
+model2 = readRDS("results/GLM_model2_12.5.21.rds")
+model2 #get p-values
+#saveRDS(model2,"results/GLM_model2_12.5.21.rds")
+```
+
