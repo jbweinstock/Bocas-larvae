@@ -73,4 +73,3 @@ model3 = readRDS("results/GLM_model_12.4.21.rds") #looks OK
 print.summary.manyglm(glm3)
 
 
-
