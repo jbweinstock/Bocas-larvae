@@ -37,9 +37,9 @@ plankton_mv = mvabund(plankton_common)
 To avoid redundant predictor terms, run quick PCA on physical data
 ```{r}
 data_waterqual = as.data.frame(cbind(data$DO,data$temp_C,data$turbidity,
-                                     data$salinity,data$chlorophyll,data$DOM,data$BGA))
+                                data$salinity,data$chlorophyll,data$DOM,data$BGA))
 colnames(data_waterqual) = c("DO","temp","turbidity","sal","chlor","DOM","BGA")
-water.pca = rda(na.omit(data_waterqual), scale=T) #all are in same units, no need to scale
+water.pca = rda(na.omit(data_waterqual), scale=T) #different usits, have to scale
 #summary(water.pca)
 screeplot(water.pca,type="l")
 biplot(water.pca,type="text")
@@ -190,7 +190,8 @@ glm5 = manyglm(plankton_mv ~ data_nona$Site *
                family="negative_binomial", #better for counts
                nBoot = 1000, #default
                k=1, #default
-               theta.method = "PHI") #default
+               theta.method = "PHI", #default
+               show.coef = F) 
 
 plot(glm5) #check residuals
 drop_test_5 = drop1(glm5,test="Chisq",trace=T) #likelihood ratio test recommended for GLMs
@@ -212,5 +213,32 @@ In the full output, we see that the interaction between temperature and chloroph
 model2 = readRDS("results/GLM_model2_12.5.21.rds")
 model2 #get p-values
 #saveRDS(model2,"results/GLM_model2_12.5.21.rds")
+```
+
+Just out of curiousity, what happens when we drop all interaction terms...
+```{r}
+glm6 = manyglm(plankton_mv ~ data_nona$Site + 
+                 as.factor(data_nona$Depth_ctgry) + 
+                 data_nona$DO + 
+                 data_nona$temp_C + 
+                 data_nona$salinity +
+                 data_nona$chlorophyll +
+                 data_nona$DOM,
+               family="negative_binomial", #better for counts
+               nBoot = 1000, #default
+               k=1, #default
+               theta.method = "PHI") #default
+
+plot(glm6) #check residuals
+drop_test_6 = drop1(glm6,test="Chisq",trace=T) #likelihood ratio test recommended for GLMs
+drop_test_6
+```
+
+```{r}
+summary.manyglm(glm5,show.est = T)
+```
+
+```{r}
+summary.manyglm(glm6,show.est = F)
 ```
 
