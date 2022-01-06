@@ -23,78 +23,144 @@ data$location = paste(data$Site,data$Depth_ctgry,sep=" ")
 data$location = factor(data$location, levels = c("STRI Point 10", "STRI Point 20",
                                                  "Cristobal 10", "Cristobal 20",
                                                  "Pastores 10", "Pastores 20"))
+data$Depth_ctgry = factor(data$Depth_ctgry)
 
-ggplot(data, aes(x=DO, y=log10(pteropods + 1))) + 
-  geom_point(aes(col=location)) + 
+
+DO1 <- ggplot(data, aes(x=DO, y=log10(pteropods + 1)/379)) + 
+  geom_point(aes(fill=Depth_ctgry, shape=Site), 
+             alpha=0.4,size=2) + 
   theme_classic() + 
   geom_smooth(method = "gam", se=F,
-              formula = y ~ log(x), 
-              aes(col=location)) + 
-  scale_color_brewer(palette = "Paired")
+              formula = y ~ log(x),
+              size=1.3,
+              aes(col=Depth_ctgry)) + 
+  scale_color_brewer(palette = "Paired", aesthetics = "fill") + 
+  scale_shape_manual(values = c(21,22,25)) 
+  scale_color_manual(values = c(brewer.pal(9,"Purples")[c(6,9)])) + 
+  ggtitle("Pteropods") + 
+  ylab("Log( Abundance + 1 ) "~L^-1~"")
 
-ggplot(data, aes(x=DO, y=log10(chaetognaths + 1))) + 
-  geom_point(aes(col=location)) + 
+DO2 <- ggplot(data, aes(x=DO, y=log10(chaetognaths + 1)/379)) + 
+  geom_point(aes(fill=location), 
+             alpha=0.4,size=2,shape=21) + 
   theme_classic() + 
   geom_smooth(method = "gam", se=F,
-              formula = y ~ log(x), 
-              aes(col=location)) + 
-  scale_color_brewer(palette = "Paired")
+              formula = y ~ log(x),
+              size=1.3, 
+              aes(col=Depth_ctgry)) + 
+  scale_color_brewer(palette = "Paired", aesthetics = "fill") + 
+  #scale_color_manual(values = c(brewer.pal(12,"Paired")[c(9,10)])) + 
+  scale_color_manual(values = c(brewer.pal(9,"Purples")[c(6,9)])) +
+  ggtitle("Chaetognaths") + 
+  ylab("Log( Abundance + 1 ) "~L^-1~"")
 
-ggplot(data, aes(x=DO, y=log10(larvaceans  + 1))) + 
-  geom_point(aes(col=location)) + 
+DO3 <- ggplot(data, aes(x=DO, y=log10(larvaceans  + 1)/379)) + 
+  geom_point(aes(fill=location), 
+             alpha=0.4,size=2,shape=21) + 
   theme_classic() + 
   geom_smooth(method = "gam", se=F,
-              formula = y ~ log(x), 
-              aes(col=location)) + 
-  scale_color_brewer(palette = "Paired")
+              formula = y ~ log(x),
+              size=1.3, 
+              aes(col=Depth_ctgry)) + 
+  scale_color_brewer(palette = "Paired", aesthetics = "fill") + 
+  #scale_color_manual(values = c(brewer.pal(12,"Paired")[c(9,10)])) + 
+  scale_color_manual(values = c(brewer.pal(9,"Purples")[c(6,9)])) +
+  ggtitle("Larvaceans") + 
+  ylab("Log( Abundance + 1 ) "~L^-1~"")
 
-ggplot(data, aes(x=DO, y=log10(copepods + 1))) + 
-  geom_point(aes(col=location)) + 
+DO4 <- ggplot(data, aes(x=DO, y=log10(copepods + 1)/379)) + 
+  geom_point(aes(fill=location), 
+             alpha=0.4,size=2,shape=21) + 
   theme_classic() + 
   geom_smooth(method = "gam", se=F,
-              formula = y ~ log(x), 
-              aes(col=location)) + 
-  scale_color_brewer(palette = "Paired")
+              formula = y ~ log(x),
+              size=1.3, 
+              aes(col=Depth_ctgry)) + 
+  scale_color_brewer(palette = "Paired", aesthetics = "fill") + 
+  #scale_color_manual(values = c(brewer.pal(12,"Paired")[c(9,10)])) + 
+  scale_color_manual(values = c(brewer.pal(9,"Purples")[c(6,9)])) +
+  ggtitle("Copepods") + 
+  ylab("Log( Abundance + 1 ) "~L^-1~"")
 
-ggplot(data, aes(x=DO, y=log10(bivalves + 1))) + 
-  geom_point(aes(col=location)) + 
+DO5 <- ggplot(data, aes(x=DO, y=log10(bivalves + 1)/379)) + 
+  geom_point(aes(fill=location), 
+             alpha=0.4,size=2,shape=21) + 
   theme_classic() + 
   geom_smooth(method = "gam", se=F,
-              formula = y ~ log(x), 
-              aes(col=location)) + 
-  scale_color_brewer(palette = "Paired")
+              formula = y ~ log(x),
+              size=1.3, 
+              aes(col=Depth_ctgry)) + 
+  scale_color_brewer(palette = "Paired", aesthetics = "fill") + 
+  #scale_color_manual(values = c(brewer.pal(12,"Paired")[c(9,10)])) + 
+  scale_color_manual(values = c(brewer.pal(9,"Purples")[c(6,9)])) +
+  ggtitle("Bivalves") + 
+  ylab("Log( Abundance + 1 ) "~L^-1~"")
 
-ggplot(data, aes(x=DO, y=log10(gastropods + 1))) + 
-  geom_point(aes(col=location)) + 
+DO6 <- ggplot(data, aes(x=DO, y=log10(gastropods + 1)/379)) + 
+  geom_point(aes(fill=location), 
+             alpha=0.4,size=2,shape=21) + 
   theme_classic() + 
   geom_smooth(method = "gam", se=F,
-              formula = y ~ log(x), 
-              aes(col=location)) + 
-  scale_color_brewer(palette = "Paired")
+              formula = y ~ log(x),
+              size=1.3, 
+              aes(col=Depth_ctgry)) + 
+  scale_color_brewer(palette = "Paired", aesthetics = "fill") + 
+  #scale_color_manual(values = c(brewer.pal(12,"Paired")[c(9,10)])) + 
+  scale_color_manual(values = c(brewer.pal(9,"Purples")[c(6,9)])) +
+  ggtitle("Gastropods") + 
+  ylab("Log( Abundance + 1 ) "~L^-1~"")
 
-ggplot(data, aes(x=DO, y=log10(plutei + 1))) + 
-  geom_point(aes(col=location)) + 
+DO7 <- ggplot(data, aes(x=DO, y=log10(plutei + 1)/379)) + 
+  geom_point(aes(fill=location), 
+             alpha=0.4,size=2,shape=21) + 
   theme_classic() + 
   geom_smooth(method = "gam", se=F,
-              formula = y ~ log(x), 
-              aes(col=location)) + 
-  scale_color_brewer(palette = "Paired")
+              formula = y ~ log(x),
+              size=1.3, 
+              aes(col=Depth_ctgry)) + 
+  scale_color_brewer(palette = "Paired", aesthetics = "fill") + 
+  #scale_color_manual(values = c(brewer.pal(12,"Paired")[c(9,10)])) + 
+  scale_color_manual(values = c(brewer.pal(9,"Purples")[c(6,9)])) +
+  ggtitle("Plutei") + 
+  ylab("Log( Abundance + 1 ) "~L^-1~"")
 
-ggplot(data, aes(x=DO, y=log10(barnacle_nauplii + 1))) + 
-  geom_point(aes(col=location)) + 
+DO8 <- ggplot(data, aes(x=DO, y=log10(barnacle_nauplii + 1)/379)) + 
+  geom_point(aes(fill=location), 
+             alpha=0.4,size=2,shape=21) + 
   theme_classic() + 
   geom_smooth(method = "gam", se=F,
-              formula = y ~ log(x), 
-              aes(col=location)) + 
-  scale_color_brewer(palette = "Paired")
+              formula = y ~ log(x),
+              size=1.3, 
+              aes(col=Depth_ctgry)) + 
+  scale_color_brewer(palette = "Paired", aesthetics = "fill") + 
+  #scale_color_manual(values = c(brewer.pal(12,"Paired")[c(9,10)])) + 
+  scale_color_manual(values = c(brewer.pal(9,"Purples")[c(6,9)])) +
+  ggtitle("Nauplii") + 
+  ylab("Log( Abundance + 1 ) "~L^-1~"")
 
-ggplot(data, aes(x=DO, y=log10(barnacle_cyprids + 1))) + 
-  geom_point(aes(col=location)) + 
+DO9 <- ggplot(data, aes(x=DO, y=log10(barnacle_cyprids + 1)/379)) + 
+  geom_point(aes(fill=location), 
+             alpha=0.4,size=2,shape=21) + 
   theme_classic() + 
   geom_smooth(method = "gam", se=F,
-              formula = y ~ log(x), 
-              aes(col=location)) + 
-  scale_color_brewer(palette = "Paired")
+              formula = y ~ log(x),
+              size=1.3, 
+              aes(col=Depth_ctgry)) + 
+  scale_color_brewer(palette = "Paired", aesthetics = "fill") + 
+  #scale_color_manual(values = c(brewer.pal(12,"Paired")[c(9,10)])) + 
+  scale_color_manual(values = c(brewer.pal(9,"Purples")[c(6,9)])) +
+  ggtitle("Cyprids") + 
+  ylab("Log( Abundance + 1 ) "~L^-1~"")
+
+
+
+ggarrange(DO1, DO2, DO3,
+          DO4, DO5, DO6,
+          DO7, DO8, DO9,
+          nrow=3, ncol=3,
+          common.legend = T,
+          legend = "bottom")
+
 
 
 
