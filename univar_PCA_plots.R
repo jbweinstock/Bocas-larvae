@@ -1,6 +1,6 @@
 ## Bocas plankton community - Plankton plots in PC space
 ## Date created: 12.31.21
-## Date updated: 12.31.21
+## Date updated: 01.04.22
 ## Run in R 4.1.1
 
 
@@ -20,24 +20,30 @@ library(interp) #using to grid plankton data
 data = read.csv("data/combined_counts.csv")
 data$Date = as.Date(data$Date,"%m/%d/%y")
 data$Site = factor(data$Site, levels = c("STRI Point","Cristobal","Pastores"))
+data$Depth_ctgry = factor(data$Depth_ctgry)
 
 data$chlorophyll = na.approx(data$chlorophyll,method="linear",na.rm=F)
 data$DOM = na.approx(data$DOM,method="linear",na.rm=F)
 data$BGA = na.approx(data$BGA,method="linear",na.rm=F)
 data$turbidity = na.approx(data$turbidity,method="linear",na.rm=F)
 
-data_waterqual = as.data.frame(cbind(data$DO, data$temp_C, data$turbidity,
+data_waterqual = as.data.frame(cbind(data$DO, data$temp_C, #data$turbidity,
                                      data$salinity, data$chlorophyll, 
-                                     data$DOM, data$BGA))
-colnames(data_waterqual) = c("DO","temp","turbidity","sal","chlor","DOM","BGA")
+                                     data$DOM)) #, data$BGA))
+colnames(data_waterqual) = c("DO","temp", #"turbidity",
+                             "sal","chlor","DOM") #,"BGA")
 
-water.pca = rda(na.omit(data_waterqual), scale=T) #different usits, have to scale
+water.pca = rda(na.omit(data_waterqual), scale=T) #different units, have to scale
 summary(water.pca)
 screeplot(water.pca,type="l")
 biplot(water.pca,type="text")
 
-data$PO_PC1 = water.pca$CA$u[,1] #36.32%
-data$PO_PC2 = water.pca$CA$u[,2] #22.39%
+data$PO_PC1 = water.pca$CA$u[,1] # 45.7%
+data$PO_PC2 = water.pca$CA$u[,2] # 23.6%
+
+#data$total = (data$pteropods + data$chaetognaths + data$larvaceans + 
+#                data$copepods + data$bivalves + data$gastropods + 
+#                data$plutei + data$barnacle_nauplii + data$barnacle_cyprids)/100
 
 ggplot(data, aes(x=PO_PC1, y=PO_PC2, fill=Week)) + 
   geom_point(size=3, alpha=0.9, stroke = 0.8, aes(shape=Site)) + 
