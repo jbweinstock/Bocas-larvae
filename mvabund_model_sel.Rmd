@@ -5,6 +5,10 @@ date: "12/5/2021"
 output: pdf_document
 ---
 
+***GLM: Include depth, but not site or their interaction
+***For PCA, get statistic (using envfit, adonis)
+***Univariate GLMs for each group, w/ model selection
+
 First, load the libraries
 ```{r}
 library(zoo) # as.Date
@@ -23,6 +27,7 @@ Then, load the data
 # Load data
 data = read.csv("data/combined_counts.csv")
 data$Date = as.Date(data$Date,"%m/%d/%y")
+data$Depth_ctgry = factor(data$Depth_ctgry)
 
 # Pull out only the columns of plankton counts
 plankton_counts = data[,8:18]; plankton_counts$copepods = data$copepods
@@ -57,8 +62,7 @@ data_nona$DOM = na.approx(data_nona$DOM,method="linear",na.rm=F)
 Now for model selection... 
 First, run the full model (omitting pH due to QC concerns), allowing for all possible 2-way interactions between factors, and all possible 2-way interactions between continuous variables
 ```{r}
-glm1 = manyglm(plankton_mv ~ data_nona$Site * 
-                 as.factor(data_nona$Depth_ctgry) + 
+glm1 = manyglm(plankton_mv ~ data_nona$Depth_ctgry + 
                  data_nona$DO + 
                  data_nona$temp_C + 
                  data_nona$salinity +
@@ -93,8 +97,7 @@ This suggests dropping the interaction between chlorophyll and DOM...
 
 So run the model again, dropping the term that yielded the lowest AIC
 ```{r}
-glm2 = manyglm(plankton_mv ~ data_nona$Site * 
-                 as.factor(data_nona$Depth_ctgry) + 
+glm2 = manyglm(plankton_mv ~ data_nona$Depth_ctgry + 
                  data_nona$DO + 
                  data_nona$temp_C + 
                  data_nona$salinity +
@@ -121,8 +124,7 @@ drop_test_2
 Since we still have a lot of terms, we will go ahead and toss out the interaction term with the next lowest AIC: the interaction between DO and salinity.
 
 ```{r}
-glm3 = manyglm(plankton_mv ~ data_nona$Site * 
-                 as.factor(data_nona$Depth_ctgry) + 
+glm3 = manyglm(plankton_mv ~ data_nona$Depth_ctgry + 
                  data_nona$DO + 
                  data_nona$temp_C + 
                  data_nona$salinity +
@@ -145,11 +147,17 @@ plot(glm3) #check residuals
 drop_test_3 = drop1(glm3,test="Chisq",trace=T) #likelihood ratio test recommended for GLMs
 drop_test_3
 ```
-Again. since we still have a lot of terms, we will go ahead and toss out the interaction term with the next lowest AIC: the interaction between salinity and chlorophyll.
+2022 EDIT: NOW ALL REMAINING TERMS RESULT IN HIGHER AICs! THIS SUGGESTS THAT GLM3 IS THE BEST MODEL FOR THE COMMUNITY
 
 ```{r}
-glm4 = manyglm(plankton_mv ~ data_nona$Site * 
-                 as.factor(data_nona$Depth_ctgry) + 
+model_2022 = anova.manyglm(glm3) #took 23 min
+model_2022
+```
+
+Again. since we still have a lot of terms, we will go ahead and toss out the interaction term with the next lowest AIC: the interaction between salinity and chlorophyll. >> 2022 EDIT! THE AICs WERE WORSE, BUT THE FINAL COMMUNITY MODEL STILL HAS NON-SIGNIFICANT TERMS...... SO LET'S TOSS TEMPxCHLOR
+
+```{r}
+glm4 = manyglm(plankton_mv ~ data_nona$Depth_ctgry + 
                  data_nona$DO + 
                  data_nona$temp_C + 
                  data_nona$salinity +
@@ -158,9 +166,9 @@ glm4 = manyglm(plankton_mv ~ data_nona$Site *
                  data_nona$DO:data_nona$temp_C + 
                  data_nona$DO:data_nona$chlorophyll + 
                  data_nona$DO:data_nona$DOM + 
-                 data_nona$temp_C:data_nona$salinity + 
-                 data_nona$temp_C:data_nona$chlorophyll + 
+                 data_nona$temp_C:data_nona$salinity +  
                  data_nona$temp_C:data_nona$DOM + 
+                 data_nona$salinity:data_nona$chlorophyll + 
                  data_nona$salinity:data_nona$DOM,
                family="negative_binomial", #better for counts
                nBoot = 1000, #default
@@ -171,11 +179,10 @@ plot(glm4) #check residuals
 drop_test_4 = drop1(glm4,test="Chisq",trace=T) #likelihood ratio test recommended for GLMs
 drop_test_4
 ```
-At this point, no single (dropped) term can make the model significantly better. However, we will keep dropping the lowest AIC value just to see if we get to another point when the model improves again.
+At this point, no single (dropped) term can make the model significantly better. However, we will keep dropping the lowest AIC value just to see if we get to another point when the model improves again. >> 2022 EDIT: SAME REASONING, BUT *NOW* DROPPING SALxCHLOR, WHICH GETS UP BACK TO THE AIC FROM GLM3
 
 ```{r}
-glm5 = manyglm(plankton_mv ~ data_nona$Site * 
-                 as.factor(data_nona$Depth_ctgry) + 
+glm5 = manyglm(plankton_mv ~ data_nona$Depth_ctgry + 
                  data_nona$DO + 
                  data_nona$temp_C + 
                  data_nona$salinity +
@@ -184,8 +191,8 @@ glm5 = manyglm(plankton_mv ~ data_nona$Site *
                  data_nona$DO:data_nona$temp_C + 
                  data_nona$DO:data_nona$chlorophyll + 
                  data_nona$DO:data_nona$DOM + 
-                 data_nona$temp_C:data_nona$salinity + 
-                 data_nona$temp_C:data_nona$DOM + 
+                 data_nona$temp_C:data_nona$salinity +  
+                 data_nona$temp_C:data_nona$DOM +  
                  data_nona$salinity:data_nona$DOM,
                family="negative_binomial", #better for counts
                nBoot = 1000, #default
@@ -197,7 +204,7 @@ plot(glm5) #check residuals
 drop_test_5 = drop1(glm5,test="Chisq",trace=T) #likelihood ratio test recommended for GLMs
 drop_test_5
 ```
-...It only got worse... So we will stick with glm4, which kept the term dropped in glm5.
+...It only got worse... So we will stick with glm4, which kept the term dropped in glm5. >> 2022 EDIT, GLM5 LOOKS GOOD
 
 So next, we get the univariate tests...
 ########
@@ -206,11 +213,12 @@ model1 = anova.manyglm(glm4,p.uni = "adjusted") #took 26 min
 model1 #get p-values
 #saveRDS(model1,"results/GLM_model_12.5.21.rds")
 ```
+
 In the full output, we see that the interaction between temperature and chlorophyll is not significant in either the multivariate test or in any univariate tests. Therefore, we will try the same test for glm5 (when we dropped that term and the AIC stayed the same).
 
 ```{r}
-#model2 = anova.manyglm(glm5,p.uni = "adjusted") #took 22 min
-model2 = readRDS("results/GLM_model2_12.5.21.rds")
+model2 = anova.manyglm(glm5) #took 19 min
+#model2 = readRDS("results/GLM_model2_12.5.21.rds")
 model2 #get p-values
 #saveRDS(model2,"results/GLM_model2_12.5.21.rds")
 ```
@@ -218,7 +226,7 @@ model2 #get p-values
 Just out of curiousity, what happens when we drop all interaction terms...
 ```{r}
 glm6 = manyglm(plankton_mv ~ data_nona$Site + 
-                 as.factor(data_nona$Depth_ctgry) + 
+                 data_nona$Depth_ctgry + 
                  data_nona$DO + 
                  data_nona$temp_C + 
                  data_nona$salinity +
@@ -234,11 +242,98 @@ drop_test_6 = drop1(glm6,test="Chisq",trace=T) #likelihood ratio test recommende
 drop_test_6
 ```
 
+2022: Let's keep dropping terms from glm5 to see what happens! Specifically, let's drop temp*DOM
 ```{r}
-summary.manyglm(glm5,show.est = T)
+glm7 = manyglm(plankton_mv ~ data_nona$Depth_ctgry + 
+                 data_nona$DO + 
+                 data_nona$temp_C + 
+                 data_nona$salinity +
+                 data_nona$chlorophyll +
+                 data_nona$DOM + 
+                 data_nona$DO:data_nona$temp_C + 
+                 data_nona$DO:data_nona$chlorophyll + 
+                 data_nona$DO:data_nona$DOM + 
+                 data_nona$temp_C:data_nona$salinity +  
+                 data_nona$salinity:data_nona$DOM,
+               family="negative_binomial", #better for counts
+               nBoot = 1000, #default
+               k=1, #default
+               theta.method = "PHI", #default
+               show.coef = F) 
+
+plot(glm7) #check residuals
+drop_test_7 = drop1(glm7,test="Chisq",trace=T) #likelihood ratio test recommended for GLMs
+drop_test_7
+
+#summary.manyglm(glm5,show.est = T)
 ```
+2022: The AICs are all worse, but let's see if the model still has non-significant terms...
+```{r}
+model3 = anova.manyglm(glm7) #took 17.5 min
+model3 #get p-values
+```
+2022: Again, we have terms that are borderline significant (sal*DOM) so let's drop them!
 
 ```{r}
-summary.manyglm(glm6,show.est = F)
+glm8 = manyglm(plankton_mv ~ data_nona$Depth_ctgry + 
+                 data_nona$DO + 
+                 data_nona$temp_C + 
+                 data_nona$salinity +
+                 data_nona$chlorophyll +
+                 data_nona$DOM + 
+                 data_nona$DO:data_nona$temp_C + 
+                 data_nona$DO:data_nona$chlorophyll + 
+                 data_nona$DO:data_nona$DOM + 
+                 data_nona$temp_C:data_nona$salinity,
+               family="negative_binomial", #better for counts
+               nBoot = 1000, #default
+               k=1, #default
+               theta.method = "PHI", #default
+               show.coef = F) 
+
+plot(glm8) #check residuals
+drop_test_8 = drop1(glm8,test="Chisq",trace=T) #likelihood ratio test recommended for GLMs
+drop_test_8
+```
+2022: The AICs are still getting worse, but let's go ahead and see whether the remaining terms are all significant.
+
+```{r}
+model5 = anova.manyglm(glm8) #took 15 min
+#model2 = readRDS("results/GLM_model2_12.5.21.rds")
+model5 #get p-values
+#saveRDS(model2,"results/GLM_model2_12.5.21.rds")
+```
+2022: Out of curiousity, what happens when we ditch that DO*chlor term.....
+
+```{r}
+glm9 = manyglm(plankton_mv ~ data_nona$Depth_ctgry + 
+                 data_nona$DO + 
+                 data_nona$temp_C + 
+                 data_nona$salinity +
+                 data_nona$chlorophyll +
+                 data_nona$DOM + 
+                 data_nona$DO:data_nona$temp_C + 
+                 data_nona$DO:data_nona$DOM + 
+                 data_nona$temp_C:data_nona$salinity,
+               family="negative_binomial", #better for counts
+               nBoot = 1000, #default
+               k=1, #default
+               theta.method = "PHI", #default
+               show.coef = F) 
+
+plot(glm9) #check residuals
+drop_test_9 = drop1(glm9,test="Chisq",trace=T) #likelihood ratio test recommended for GLMs
+drop_test_9
+```
+2022: The AICs are still getting worse, but let's go ahead and see what happens...
+
+```{r}
+model6 = anova.manyglm(glm9) #took 13 min
+#model2 = readRDS("results/GLM_model_01.05.22.rds")
+model6 #get p-values
+#saveRDS(model6,"results/GLM_model_01.05.22.rds")
+```
+```{r}
+
 ```
 
