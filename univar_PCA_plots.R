@@ -1,6 +1,6 @@
 ## Bocas plankton community - Plankton plots in PC space
 ## Date created: 12.31.21
-## Date updated: 01.04.22
+## Date updated: 03.02.22
 ## Run in R 4.1.1
 
 
@@ -17,7 +17,8 @@ library(interp) #using to grid plankton data
 
 
 # Load data
-data = read.csv("data/combined_counts.csv")
+data = read.csv("data/combined_counts_interp.csv",
+                na.strings = c("NA",""))
 data$Date = as.Date(data$Date,"%m/%d/%y")
 data$Site = factor(data$Site, levels = c("STRI Point","Cristobal","Pastores"))
 data$Depth_ctgry = factor(data$Depth_ctgry)
@@ -26,6 +27,10 @@ data$chlorophyll = na.approx(data$chlorophyll,method="linear",na.rm=F)
 data$DOM = na.approx(data$DOM,method="linear",na.rm=F)
 data$BGA = na.approx(data$BGA,method="linear",na.rm=F)
 data$turbidity = na.approx(data$turbidity,method="linear",na.rm=F)
+data$DO = na.approx(data$DO,method="linear",na.rm=F)
+data$temp_C = na.approx(data$temp_C,method="linear",na.rm=F)
+data$salinity = na.approx(data$salinity,method="linear",na.rm=F)
+
 
 data_waterqual = as.data.frame(cbind(data$DO, data$temp_C, #data$turbidity,
                                      data$salinity, data$chlorophyll, 
@@ -38,12 +43,137 @@ summary(water.pca)
 screeplot(water.pca,type="l")
 biplot(water.pca,type="text")
 
-data$PO_PC1 = water.pca$CA$u[,1] # 45.7%
+data$PO_PC1 = water.pca$CA$u[,1] # 45.6%
 data$PO_PC2 = water.pca$CA$u[,2] # 23.6%
 
-#data$total = (data$pteropods + data$chaetognaths + data$larvaceans + 
-#                data$copepods + data$bivalves + data$gastropods + 
-#                data$plutei + data$barnacle_nauplii + data$barnacle_cyprids)/100
+shallow <- subset.data.frame(data, data$Depth_ctgry == 10)
+deep <- subset.data.frame(data, data$Depth_ctgry == 20)
+
+summary(lm((log10(shallow$pteropods + 1)/379) ~ shallow$PO_PC1 + (shallow$PO_PC1)^2)) # R^2 = 0.113
+summary(lm((log10(deep$pteropods + 1)/379) ~ deep$PO_PC1 + (deep$PO_PC1)^2)) # R^2 = 0.012
+
+p1 <- ggplot(data, aes(x=PO_PC1, y=log10(pteropods+1))) + 
+  geom_point(size=3, alpha=0.4, stroke = 0.8, aes(shape=Site,fill=Depth_ctgry)) + 
+  #scale_fill_distiller(palette = "Spectral") + 
+  theme_classic() + 
+  scale_shape_manual(values = c(21,22,24)) + 
+  geom_hline(yintercept = 0, linetype = "dotted") + 
+  geom_vline(xintercept = 0, linetype = "dotted") + 
+  geom_smooth(aes(col=Depth_ctgry),
+              se=F, method = "gam", formula = y ~ poly(x,2))
+
+summary(lm((log10(shallow$chaetognaths + 1)/379) ~ shallow$PO_PC1 + (shallow$PO_PC1)^2)) # R^2 = 0.009
+summary(lm((log10(deep$chaetognaths + 1)/379) ~ deep$PO_PC1 + (deep$PO_PC1)^2)) # R^2 = 0.03
+
+p2 <- ggplot(data, aes(x=PO_PC1, y=log10(chaetognaths+1), fill=Depth_ctgry)) + 
+  geom_point(size=3, alpha=0.4, stroke = 0.8, aes(shape=Site)) + 
+  #scale_fill_distiller(palette = "Spectral") + 
+  theme_classic() + 
+  scale_shape_manual(values = c(21,22,24)) + 
+  geom_hline(yintercept = 0, linetype = "dotted") + 
+  geom_vline(xintercept = 0, linetype = "dotted") + 
+  geom_smooth(aes(col=Depth_ctgry),
+              se=F, method = "gam", formula = y ~ poly(x,2))
+
+summary(lm((log10(shallow$larvaceans + 1)/379) ~ shallow$PO_PC1 + (shallow$PO_PC1)^2)) # R^2 = 0.145
+summary(lm((log10(deep$larvaceans + 1)/379) ~ deep$PO_PC1 + (deep$PO_PC1)^2)) # R^2 = 0.257
+
+p3 <- ggplot(data, aes(x=PO_PC1, y=log10(larvaceans+1), fill=Depth_ctgry)) + 
+  geom_point(size=3, alpha=0.4, stroke = 0.8, aes(shape=Site)) + 
+  #scale_fill_distiller(palette = "Spectral") + 
+  theme_classic() + 
+  scale_shape_manual(values = c(21,22,24)) + 
+  geom_hline(yintercept = 0, linetype = "dotted") + 
+  geom_vline(xintercept = 0, linetype = "dotted") + 
+  geom_smooth(aes(col=Depth_ctgry),
+              se=F, method = "gam", formula = y ~ poly(x,2))
+
+summary(lm((log10(shallow$copepods + 1)/379) ~ shallow$PO_PC1 + (shallow$PO_PC1)^2)) # R^2 = 0.004
+summary(lm((log10(deep$copepods + 1)/379) ~ deep$PO_PC1 + (deep$PO_PC1)^2)) # R^2 = 0.276
+
+p4 <- ggplot(data, aes(x=PO_PC1, y=log10(copepods+1), fill=Depth_ctgry)) + 
+  geom_point(size=3, alpha=0.4, stroke = 0.8, aes(shape=Site)) + 
+  #scale_fill_distiller(palette = "Spectral") + 
+  theme_classic() + 
+  scale_shape_manual(values = c(21,22,24)) + 
+  geom_hline(yintercept = 0, linetype = "dotted") + 
+  geom_vline(xintercept = 0, linetype = "dotted") + 
+  geom_smooth(aes(col=Depth_ctgry),
+              se=F, method = "gam", formula = y ~ poly(x,2))
+
+summary(lm((log10(shallow$bivalves + 1)/379) ~ shallow$PO_PC1 + (shallow$PO_PC1)^2)) # R^2 = 0.0196
+summary(lm((log10(deep$bivalves + 1)/379) ~ deep$PO_PC1 + (deep$PO_PC1)^2)) # R^2 = 0.255
+
+p5 <- ggplot(data, aes(x=PO_PC1, y=log10(bivalves+1), fill=Depth_ctgry)) + 
+  geom_point(size=3, alpha=0.4, stroke = 0.8, aes(shape=Site)) + 
+  #scale_fill_distiller(palette = "Spectral") + 
+  theme_classic() + 
+  scale_shape_manual(values = c(21,22,24)) + 
+  geom_hline(yintercept = 0, linetype = "dotted") + 
+  geom_vline(xintercept = 0, linetype = "dotted") + 
+  geom_smooth(aes(col=Depth_ctgry),
+              se=F, method = "gam", formula = y ~ poly(x,2))
+
+summary(lm((log10(shallow$gastropods + 1)/379) ~ shallow$PO_PC1 + (shallow$PO_PC1)^2)) # R^2 = 0.167
+summary(lm((log10(deep$gastropods + 1)/379) ~ deep$PO_PC1 + (deep$PO_PC1)^2)) # R^2 = 0.303
+
+p6 <- ggplot(data, aes(x=PO_PC1, y=log10(gastropods+1), fill=Depth_ctgry)) + 
+  geom_point(size=3, alpha=0.4, stroke = 0.8, aes(shape=Site)) + 
+  #scale_fill_distiller(palette = "Spectral") + 
+  theme_classic() + 
+  scale_shape_manual(values = c(21,22,24)) + 
+  geom_hline(yintercept = 0, linetype = "dotted") + 
+  geom_vline(xintercept = 0, linetype = "dotted") + 
+  geom_smooth(aes(col=Depth_ctgry),
+              se=F, method = "gam", formula = y ~ poly(x,2))
+
+summary(lm((log10(shallow$plutei + 1)/379) ~ shallow$PO_PC1 + (shallow$PO_PC1)^2)) # R^2 = 0.098
+summary(lm((log10(deep$plutei + 1)/379) ~ deep$PO_PC1 + (deep$PO_PC1)^2)) # R^2 = 0.253
+
+p7 <- ggplot(data, aes(x=PO_PC1, y=log10(plutei+1), fill=Depth_ctgry)) + 
+  geom_point(size=3, alpha=0.4, stroke = 0.8, aes(shape=Site)) + 
+  #scale_fill_distiller(palette = "Spectral") + 
+  theme_classic() + 
+  scale_shape_manual(values = c(21,22,24)) + 
+  geom_hline(yintercept = 0, linetype = "dotted") + 
+  geom_vline(xintercept = 0, linetype = "dotted") + 
+  geom_smooth(aes(col=Depth_ctgry),
+              se=F, method = "gam", formula = y ~ poly(x,2))
+
+summary(lm((log10(shallow$barnacle_nauplii + 1)/379) ~ shallow$PO_PC1 + (shallow$PO_PC1)^2)) # R^2 = 0.0001
+summary(lm((log10(deep$barnacle_nauplii + 1)/379) ~ deep$PO_PC1 + (deep$PO_PC1)^2)) # R^2 = 0.04
+
+p8 <- ggplot(data, aes(x=PO_PC1, y=log10(barnacle_nauplii+1), fill=Depth_ctgry)) + 
+  geom_point(size=3, alpha=0.4, stroke = 0.8, aes(shape=Site)) + 
+  #scale_fill_distiller(palette = "Spectral") + 
+  theme_classic() + 
+  scale_shape_manual(values = c(21,22,24)) + 
+  geom_hline(yintercept = 0, linetype = "dotted") + 
+  geom_vline(xintercept = 0, linetype = "dotted") + 
+  geom_smooth(aes(col=Depth_ctgry),
+              se=F, method = "gam", formula = y ~ poly(x,2))
+
+summary(lm((log10(shallow$barnacle_cyprids + 1)/379) ~ shallow$PO_PC1 + (shallow$PO_PC1)^2)) # R^2 = 0.0013
+summary(lm((log10(deep$barnacle_cyprids + 1)/379) ~ deep$PO_PC1 + (deep$PO_PC1)^2)) # R^2 = 0.024
+
+p9 <- ggplot(data, aes(x=PO_PC1, y=log10(barnacle_cyprids+1), fill=Depth_ctgry)) + 
+  geom_point(size=3, alpha=0.4, stroke = 0.8, aes(shape=Site)) + 
+  #scale_fill_distiller(palette = "Spectral") + 
+  theme_classic() + 
+  scale_shape_manual(values = c(21,22,24)) + 
+  geom_hline(yintercept = 0, linetype = "dotted") + 
+  geom_vline(xintercept = 0, linetype = "dotted") + 
+  geom_smooth(aes(col=Depth_ctgry),
+              se=F, method = "gam", formula = y ~ poly(x,2))
+
+
+ggarrange(p1, p2, p3,
+          p4, p5, p6,
+          p7, p8, p9,
+          nrow=3, ncol=3,
+          common.legend = T,
+          legend = "bottom")
+
 
 ggplot(data, aes(x=PO_PC1, y=PO_PC2, fill=Week)) + 
   geom_point(size=3, alpha=0.9, stroke = 0.8, aes(shape=Site)) + 
@@ -63,6 +193,8 @@ loadings <- autoplot(water.pca, arrows=TRUE, loadings = TRUE, #layers="species",
   theme(legend.position = "none")
 
 
+##  OLD CODE
+#######
 #PTEROPODS
 grid_pter <- with(data, interp::interp(x=PO_PC1, y=PO_PC2, z=pteropods,
                                   duplicate = "mean",
