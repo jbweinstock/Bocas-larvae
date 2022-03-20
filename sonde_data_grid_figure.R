@@ -1,13 +1,13 @@
 ## Bocas plankton community - sonde data time series figure
 ## Date created: 07.08.21
 ## Date copied: 12.04.21
-## Date updated: 01.05.22
+## Date updated: 02.27.22
 ## Run in R 4.1.1
 
 library(ggplot2)
 library(reshape2) #dcast
 library(zoo) #na.approx, as.Date
-library(latticeExtra) #levelplot
+library(ggpubr) ##ggarrange
 
 # Read in data and tell R to read dates properly
 sonde_data = read.csv("data/sonde_all.csv") #JBW manually combined sonde files for individual dates
@@ -39,6 +39,12 @@ missing$depth_bin = 0
 
 # Merge sonde data with empty rows for missing dates
 sonde_data_2017 = rbind(sonde_data,missing)
+
+# Remove Sept 13 data (corrupted)
+for(i in 9:29){
+  sonde_data_2017[,i] = ifelse(sonde_data_2017$Date_.MM.DD.YYYY. == as.Date(c("2017-09-13"),"%Y-%m-%d"),
+                                  yes = NA, no = sonde_data_2017[,i])
+}
 
 
 # Average each parameter of interest by depth bin, site, date, and time of cast (day or night)
@@ -136,8 +142,8 @@ DO_P_long$variable = as.Date(DO_P_long$variable,"%Y-%m-%d")
 DO_STRI = levelplot(value ~ variable * depth_bin, data = DO_S_long,
                panel = panel.levelplot.points,
                ylim = c(25,-1), xlim=c(as.Date("2017-01-01","%Y-%m-%d"),
-                                       as.Date("2017-12-31","%Y-%m-%d")),
-               main = "STRI DO in 2017",cex=2, pch = 22,
+                                       as.Date("2017-12-14","%Y-%m-%d")),
+               main = "STRI DO",cex=2, pch = 22,
                at = seq(0,8,length.out = 32),
                #at = seq(26,33,length.out = 32),
                #at = seq(29,37,length.out = 32),
@@ -148,19 +154,20 @@ DO_STRI = levelplot(value ~ variable * depth_bin, data = DO_S_long,
 DO_Crist = levelplot(value ~ variable * depth_bin, data = DO_C_long,
                     panel = panel.levelplot.points,
                     ylim = c(25,-1), xlim=c(as.Date("2017-01-01","%Y-%m-%d"),
-                                            as.Date("2017-12-31","%Y-%m-%d")),
-                    main = "Cristobal DO in 2017",cex=2, pch = 22,
+                                            as.Date("2017-12-14","%Y-%m-%d")),
+                    main = "Cristobal DO",cex=2, pch = 22,
                     at = seq(0,8,length.out = 32),
                     #at = seq(26,33,length.out = 32),
                     #at = seq(29,37,length.out = 32),
                     #at = seq(-4,4,length.out = 32),
                     #at = seq(7.5,10,length.out = 32),
                     col.regions = hcl.colors(32, palette = "PuOr",rev=F))
+
 DO_Past = levelplot(value ~ variable * depth_bin, data = DO_P_long,
                     panel = panel.levelplot.points,
                     ylim = c(25,-1), xlim=c(as.Date("2017-01-01","%Y-%m-%d"),
-                                            as.Date("2017-12-31","%Y-%m-%d")),
-                    main = "Pastores DO in 2017",cex=2, pch = 22,
+                                            as.Date("2017-12-14","%Y-%m-%d")),
+                    main = "Pastores DO",cex=2, pch = 22,
                     at = seq(0,8,length.out = 32),
                     #at = seq(26,33,length.out = 32),
                     #at = seq(29,37,length.out = 32),
@@ -233,8 +240,8 @@ Temp_P_long$variable = as.Date(Temp_P_long$variable,"%Y-%m-%d")
 Temp_STRI = levelplot(value ~ variable * depth_bin, data = Temp_S_long,
                     panel = panel.levelplot.points,
                     ylim = c(25,-1), xlim=c(as.Date("2017-01-01","%Y-%m-%d"),
-                                            as.Date("2017-12-31","%Y-%m-%d")),
-                    main = "STRI Temperature in 2017",cex=2, pch = 22,
+                                            as.Date("2017-12-14","%Y-%m-%d")),
+                    main = "STRI Temperature",cex=2, pch = 22,
                     #at = seq(0,8,length.out = 32),
                     at = seq(26,33,length.out = 32),
                     #at = seq(29,37,length.out = 32),
@@ -245,8 +252,8 @@ Temp_STRI = levelplot(value ~ variable * depth_bin, data = Temp_S_long,
 Temp_Crist = levelplot(value ~ variable * depth_bin, data = Temp_C_long,
                      panel = panel.levelplot.points,
                      ylim = c(25,-1), xlim=c(as.Date("2017-01-01","%Y-%m-%d"),
-                                             as.Date("2017-12-31","%Y-%m-%d")),
-                     main = "Cristobal Temperature in 2017",cex=2, pch = 22,
+                                             as.Date("2017-12-14","%Y-%m-%d")),
+                     main = "Cristobal Temperature",cex=2, pch = 22,
                      #at = seq(0,8,length.out = 32),
                      at = seq(26,33,length.out = 32),
                      #at = seq(29,37,length.out = 32),
@@ -256,8 +263,8 @@ Temp_Crist = levelplot(value ~ variable * depth_bin, data = Temp_C_long,
 Temp_Past = levelplot(value ~ variable * depth_bin, data = Temp_P_long,
                     panel = panel.levelplot.points,
                     ylim = c(25,-1), xlim=c(as.Date("2017-01-01","%Y-%m-%d"),
-                                            as.Date("2017-12-31","%Y-%m-%d")),
-                    main = "Pastores Temperature in 2017",cex=2, pch = 22,
+                                            as.Date("2017-12-14","%Y-%m-%d")),
+                    main = "Pastores Temperature",cex=2, pch = 22,
                     #at = seq(0,8,length.out = 32),
                     at = seq(26,33,length.out = 32),
                     #at = seq(29,37,length.out = 32),
@@ -330,8 +337,8 @@ Sal_P_long$variable = as.Date(Sal_P_long$variable,"%Y-%m-%d")
 Sal_STRI = levelplot(value ~ variable * depth_bin, data = Sal_S_long,
                     panel = panel.levelplot.points,
                     ylim = c(25,-1), xlim=c(as.Date("2017-01-01","%Y-%m-%d"),
-                                            as.Date("2017-12-31","%Y-%m-%d")),
-                    main = "STRI salinity in 2017",cex=2, pch = 22,
+                                            as.Date("2017-12-14","%Y-%m-%d")),
+                    main = "STRI salinity",cex=2, pch = 22,
                     #at = seq(0,8,length.out = 32),
                     #at = seq(26,33,length.out = 32),
                     at = seq(29,37,length.out = 32),
@@ -342,8 +349,8 @@ Sal_STRI = levelplot(value ~ variable * depth_bin, data = Sal_S_long,
 Sal_Crist = levelplot(value ~ variable * depth_bin, data = Sal_C_long,
                      panel = panel.levelplot.points,
                      ylim = c(25,-1), xlim=c(as.Date("2017-01-01","%Y-%m-%d"),
-                                             as.Date("2017-12-31","%Y-%m-%d")),
-                     main = "Cristobal salinity in 2017",cex=2, pch = 22,
+                                             as.Date("2017-12-14","%Y-%m-%d")),
+                     main = "Cristobal salinity",cex=2, pch = 22,
                      #at = seq(0,8,length.out = 32),
                      #at = seq(26,33,length.out = 32),
                      at = seq(29,37,length.out = 32),
@@ -353,8 +360,8 @@ Sal_Crist = levelplot(value ~ variable * depth_bin, data = Sal_C_long,
 Sal_Past = levelplot(value ~ variable * depth_bin, data = Sal_P_long,
                     panel = panel.levelplot.points,
                     ylim = c(25,-1), xlim=c(as.Date("2017-01-01","%Y-%m-%d"),
-                                            as.Date("2017-12-31","%Y-%m-%d")),
-                    main = "Pastores salinity in 2017",cex=2, pch = 22,
+                                            as.Date("2017-12-14","%Y-%m-%d")),
+                    main = "Pastores salinity",cex=2, pch = 22,
                     #at = seq(0,8,length.out = 32),
                     #at = seq(26,33,length.out = 32),
                     at = seq(29,37,length.out = 32),
@@ -424,40 +431,44 @@ Chl_P_long$variable = as.Date(Chl_P_long$variable,"%Y-%m-%d")
 
 
 ## Plots
-Chl_STRI = levelplot(log(value) ~ variable * depth_bin, data = Chl_S_long,
+Chl_STRI = levelplot((value) ~ variable * depth_bin, data = Chl_S_long,
                     panel = panel.levelplot.points,
                     ylim = c(25,-1), xlim=c(as.Date("2017-01-01","%Y-%m-%d"),
-                                            as.Date("2017-12-31","%Y-%m-%d")),
-                    main = "STRI chlorophyll in 2017",cex=2, pch = 22,
+                                            as.Date("2017-12-14","%Y-%m-%d")),
+                    main = "STRI chlorophyll",cex=2, pch = 22,
                     #at = seq(0,8,length.out = 32),
                     #at = seq(26,33,length.out = 32),
                     #at = seq(29,37,length.out = 32),
-                    at = seq(-4,4,length.out = 32),
+                    #at = seq(-4,4,length.out = 32),
+                    at = seq(0,15,length.out = 32),
                     #at = seq(7.5,10,length.out = 32),
-                    col.regions = hcl.colors(32, palette = "Greens",rev=T))
+                    col.regions = hcl.colors(32, palette = "viridis",rev=F))
 
-Chl_Crist = levelplot(log(value) ~ variable * depth_bin, data = Chl_C_long,
+Chl_Crist = levelplot((value) ~ variable * depth_bin, data = Chl_C_long,
                      panel = panel.levelplot.points,
                      ylim = c(25,-1), xlim=c(as.Date("2017-01-01","%Y-%m-%d"),
-                                             as.Date("2017-12-31","%Y-%m-%d")),
-                     main = "Cristobal chlorophyll in 2017",cex=2, pch = 22,
+                                             as.Date("2017-12-14","%Y-%m-%d")),
+                     main = "Cristobal chlorophyll",cex=2, pch = 22,
                      #at = seq(0,8,length.out = 32),
                      #at = seq(26,33,length.out = 32),
                      #at = seq(29,37,length.out = 32),
-                     at = seq(-4,4,length.out = 32),
+                     #at = seq(-4,4,length.out = 32),
+                     at = seq(0,15,length.out = 32),
                      #at = seq(7.5,10,length.out = 32),
-                     col.regions = hcl.colors(32, palette = "Greens",rev=T))
-Chl_Past = levelplot(log(value) ~ variable * depth_bin, data = Chl_P_long,
+                     col.regions = hcl.colors(32, palette = "viridis",rev=F))
+
+Chl_Past = levelplot((value) ~ variable * depth_bin, data = Chl_P_long,
                     panel = panel.levelplot.points,
                     ylim = c(25,-1), xlim=c(as.Date("2017-01-01","%Y-%m-%d"),
-                                            as.Date("2017-12-31","%Y-%m-%d")),
-                    main = "Pastores chlorophyll in 2017",cex=2, pch = 22,
+                                            as.Date("2017-12-14","%Y-%m-%d")),
+                    main = "Pastores chlorophyll",cex=2, pch = 22,
                     #at = seq(0,8,length.out = 32),
                     #at = seq(26,33,length.out = 32),
                     #at = seq(29,37,length.out = 32),
-                    at = seq(-4,4,length.out = 32),
+                    #at = seq(-4,4,length.out = 32),
+                    at = seq(0,15,length.out = 32),
                     #at = seq(7.5,10,length.out = 32),
-                    col.regions = hcl.colors(32, palette = "Greens",rev=T))
+                    col.regions = hcl.colors(32, palette = "viridis",rev=F))
 
 Sonde_Chl <- ggarrange(Chl_STRI,Chl_Crist,Chl_Past,
                       nrow = 1, ncol = 3)
@@ -522,41 +533,44 @@ DOM_P_long$variable = as.Date(DOM_P_long$variable,"%Y-%m-%d")
 
 
 ## Plots
-DOM_STRI = levelplot(log(value+1) ~ variable * depth_bin, data = DOM_S_long,
+DOM_STRI = levelplot((value) ~ variable * depth_bin, data = DOM_S_long,
                     panel = panel.levelplot.points,
                     ylim = c(25,-1), xlim=c(as.Date("2017-01-01","%Y-%m-%d"),
-                                            as.Date("2017-12-31","%Y-%m-%d")),
-                    main = "STRI DOM in 2017",cex=2, pch = 22,
+                                            as.Date("2017-12-14","%Y-%m-%d")),
+                    main = "STRI DOM",cex=2, pch = 22,
                     #at = seq(0,8,length.out = 32),
                     #at = seq(26,33,length.out = 32),
                     #at = seq(29,37,length.out = 32),
                     #at = seq(-4,4,length.out = 32),
-                    at = seq(-5.1,4.2,length.out = 32),
-                    col.regions = hcl.colors(32, palette = "PuBuGn",rev=T))
+                    #at = seq(-5.1,4.2,length.out = 32),
+                    at = seq(-1,10,length.out = 32),
+                    col.regions = hcl.colors(32, palette = "PuBuGn",rev=F))
 
-DOM_Crist = levelplot(log(value+1) ~ variable * depth_bin, data = DOM_C_long,
+DOM_Crist = levelplot((value) ~ variable * depth_bin, data = DOM_C_long,
                      panel = panel.levelplot.points,
                      ylim = c(25,-1), xlim=c(as.Date("2017-01-01","%Y-%m-%d"),
-                                             as.Date("2017-12-31","%Y-%m-%d")),
-                     main = "Cristobal DOM in 2017",cex=2, pch = 22,
+                                             as.Date("2017-12-14","%Y-%m-%d")),
+                     main = "Cristobal DOM",cex=2, pch = 22,
                      #at = seq(0,8,length.out = 32),
                      #at = seq(26,33,length.out = 32),
                      #at = seq(29,37,length.out = 32),
                      #at = seq(-4,4,length.out = 32),
-                     at = seq(-5.1,4.2,length.out = 32),
-                     col.regions = hcl.colors(32, palette = "PuBuGn",rev=T))
+                     #at = seq(-5.1,4.2,length.out = 32),
+                     at = seq(-1,10,length.out = 32),
+                     col.regions = hcl.colors(32, palette = "PuBuGn",rev=F))
 
-DOM_Past = levelplot(log(value + 1) ~ variable * depth_bin, data = DOM_P_long,
+DOM_Past = levelplot((value) ~ variable * depth_bin, data = DOM_P_long,
                     panel = panel.levelplot.points,
                     ylim = c(25,-1), xlim=c(as.Date("2017-01-01","%Y-%m-%d"),
-                                            as.Date("2017-12-31","%Y-%m-%d")),
-                    main = "Pastores DOM in 2017",cex=2, pch = 22,
+                                            as.Date("2017-12-14","%Y-%m-%d")),
+                    main = "Pastores DOM",cex=2, pch = 22,
                     #at = seq(0,8,length.out = 32),
                     #at = seq(26,33,length.out = 32),
                     #at = seq(29,37,length.out = 32),
                     #at = seq(-4,4,length.out = 32),
-                    at = seq(-5.1,4.2,length.out = 32),
-                    col.regions = hcl.colors(32, palette = "PuBuGn",rev=T))
+                    #at = seq(-5.1,4.2,length.out = 32),
+                    at = seq(-1,10,length.out = 32),
+                    col.regions = hcl.colors(32, palette = "PuBuGn",rev=F))
 
 Sonde_DOM <- ggarrange(DOM_STRI,DOM_Crist,DOM_Past,
                       nrow = 1, ncol = 3)
