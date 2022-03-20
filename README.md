@@ -8,7 +8,7 @@ Also see: Weinstock & Collin (2021) Hypoxia and warming are associated with redu
 **Scripts and analyses:**
  * Figure 2 created with script 'sonde_data_grid_figure.R'
  * Figure 3 created in lines 185-193 in script 'univar_PCA_plots.R'
- * Figures 4-6 = Rachel
+ * Figures 4-6 = ...
  * Figure 7 created with script 'PCA_figure.R'
  * Results in Table 2 achieved via script 'mvabund_model_sel.Rmd'
  * Results in Table 3 achieved via script 'univar_GLMs.R'
